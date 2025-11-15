@@ -104,7 +104,7 @@ PasswordManager
 
 Первая проверка попросит вас установить главный пароль:
 
-![img_1.png](img_1.png)
+![img_1.png](examples/img_1.png)
 
 ### Главное меню
 
