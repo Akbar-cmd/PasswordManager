@@ -1,0 +1,82 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories (remove the comment below to include it)
+vendor/
+
+# Go workspace file
+go.work
+
+# Build output
+/memory-analyzer
+/memory-analyzer-*
+*.o
+*.a
+*.so
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+
+# Local configuration
+.env
+.env.local
+config.local.*
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# System files
+.DS_Store
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+# VSCode specific
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+
+# GoLand/IntelliJ specific
+.idea/workspace.xml
+.idea/dictionaries
+.idea/libraries
+.idea/shelf
+
+# Build directories
+bin/
+dist/
+build/
+
+# Test coverage
+coverage.out
+coverage.html
+*.coverprofile
+
+# Debug binary
+__debug_bin
+
+# Air - live reload for development
+tmp/
