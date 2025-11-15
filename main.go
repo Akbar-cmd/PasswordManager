@@ -29,6 +29,7 @@ import (
 // 22. Main()
 
 func main() {
+
 	clearScreen()
 	pm := NewPasswordManager("ne_password.dat")
 
@@ -37,17 +38,20 @@ func main() {
 	masterPassword, err := readPassword()
 	if err != nil {
 		showError(fmt.Sprintf("Error reading master password: %v", err))
+		waitForEnter()
 		return
 	}
 	clearScreen()
 	if err := pm.SetMasterPassword(masterPassword); err != nil {
 		showError(fmt.Sprintf("Error setting master password: %v", err))
+		waitForEnter()
 		return
 	}
 
 	// Пытаемся загрузить существующие данные
 	if err := pm.LoadFromFile(); err != nil && !os.IsNotExist(err) {
 		showError(fmt.Sprintf("Error loading data: %v", err))
+		waitForEnter()
 		return
 	}
 
