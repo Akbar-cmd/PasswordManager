@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"fmt"
+	"math/big"
 	"strings"
 	"sync"
 	"time"
@@ -16,9 +17,9 @@ type Password struct {
 	// Категория для группировки("social", "work", "finance")
 	Category string `json:"category"`
 	// Дата создания записи
-	CreatedAt time.Time `json:"createdAt"`
+	CreatedAt time.Time `json:"created_at"`
 	// Дата последнего изменения
-	LastModified time.Time `json:"lastModified"`
+	LastModified time.Time `json:"last_modified"`
 }
 
 func NewPassword(name, value, category string) *Password {
@@ -54,6 +55,11 @@ func NewPasswordManager(filePath string) *PasswordManager {
 	}
 }
 
+const (
+	MinPasswordLength = 8
+	MasterKeySize     = 32
+)
+
 // Алгоритм работы функции:
 //
 //	1.Проверить, что длина пароля не меньше 8 символов
@@ -64,7 +70,7 @@ func NewPasswordManager(filePath string) *PasswordManager {
 
 func (pm *PasswordManager) GeneratePassword(length int) (string, error) {
 	// 1
-	if length < 8 {
+	if length < MinPasswordLength {
 		return "", fmt.Errorf("password length must be at least 8, got %d", length)
 	}
 
@@ -72,18 +78,17 @@ func (pm *PasswordManager) GeneratePassword(length int) (string, error) {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*-_+=."
 
 	// 3
-	cont := make([]byte, length)
-	_, err := rand.Read(cont)
-	if err != nil {
-		return "", err
+	pass := make([]byte, length)
+
+	for i := 0; i < length; i++ {
+		index, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		if err != nil {
+			return "", fmt.Errorf("failed to generate random index: %w", err)
+		}
+		pass[i] = charset[index.Int64()]
 	}
 
-	for i := 0; i <= length-1; i++ {
-		index := cont[i] % byte(len(charset))
-		cont[i] = charset[index]
-	}
-
-	return string(cont), nil
+	return string(pass), nil
 
 }
 
@@ -101,8 +106,8 @@ func (pm *PasswordManager) SavePassword(name, value, category string) error {
 	defer pm.mu.Unlock()
 
 	// 1
-	if pm.isInitialized != true {
-		return ErrPassManagerNotInit
+	if err := pm.passInit(); err != nil {
+		return err
 	}
 
 	// 2
@@ -131,7 +136,7 @@ func (pm *PasswordManager) GetPassword(name string) (Password, error) {
 	defer pm.mu.RUnlock()
 
 	// 1
-	if pm.isInitialized != true {
+	if !pm.isInitialized {
 		return Password{}, ErrPassManagerNotInit
 	}
 
@@ -179,12 +184,12 @@ func (pm *PasswordManager) SetMasterPassword(masterPassword string) error {
 	defer pm.mu.Unlock()
 
 	// 1
-	if len(masterPassword) < 8 {
+	if len(masterPassword) < MinPasswordLength {
 		return ErrPassWeak
 	}
 
 	// 2
-	contByte := make([]byte, 32)
+	contByte := make([]byte, MasterKeySize)
 
 	// 3
 	copy(contByte, masterPassword)
@@ -207,7 +212,7 @@ func (pm *PasswordManager) SetMasterPassword(masterPassword string) error {
 
 func (pm *PasswordManager) CheckPasswordStrength(password string) error {
 	// 1
-	if len(password) < 8 {
+	if len(password) < MinPasswordLength {
 		return ErrPassWeak
 	}
 
@@ -291,8 +296,8 @@ func (pm *PasswordManager) UpdatePassword(name, newValue string) error {
 	defer pm.mu.Unlock()
 
 	// 1
-	if pm.isInitialized != true {
-		return ErrPassManagerNotInit
+	if err := pm.passInit(); err != nil {
+		return err
 	}
 
 	// 2
@@ -332,8 +337,8 @@ func (pm *PasswordManager) DeletePassword(name string) error {
 	defer pm.mu.Unlock()
 
 	// 1
-	if pm.isInitialized != true {
-		return ErrPassManagerNotInit
+	if err := pm.passInit(); err != nil {
+		return err
 	}
 
 	// 2
@@ -360,8 +365,8 @@ func (pm *PasswordManager) DeletePassword(name string) error {
 // 4. Сохранить все метрики в карту статистики
 
 func (pm *PasswordManager) GetPasswordStats() map[string]interface{} {
-	pm.mu.Lock()
-	defer pm.mu.Unlock()
+	pm.mu.RLock()
+	defer pm.mu.RUnlock()
 
 	// 1
 	stats := make(map[string]interface{})
@@ -394,4 +399,12 @@ func (pm *PasswordManager) GetPasswordStats() map[string]interface{} {
 	stats["newest_password_date"] = newTime
 
 	return stats
+}
+
+func (pm *PasswordManager) passInit() error {
+	if !pm.isInitialized {
+		return ErrPassManagerNotInit
+	}
+
+	return nil
 }

@@ -16,19 +16,19 @@ import (
 func HandlePasswordGeneration(pm *PasswordManager) error {
 	clearScreen()
 
-	input := ReadUserInput("Enter password length (min 8): ")
+	input, err := ReadUserInput("Enter password length (min 8): ")
+	if err != nil {
+		return err
+	}
+
 	length, err := strconv.Atoi(input)
 	if err != nil {
-		showError(err.Error() + "\n")
-		waitForEnter()
-		return err
+		return fmt.Errorf("invalid input: %w", err)
 	}
 
 	pass, err := pm.GeneratePassword(length)
 	if err != nil {
-		showError(err.Error() + "\n")
-		waitForEnter()
-		return err
+		return fmt.Errorf("generation failed: %w", err)
 	}
 
 	showSuccess("Password generated successfully")
@@ -51,21 +51,23 @@ func HandlePasswordGeneration(pm *PasswordManager) error {
 
 func HandlePasswordAdd(pm *PasswordManager) error {
 	clearScreen()
-	nameInput := ReadUserInput("Enter service name: ")
+	nameInput, err := ReadUserInput("Enter service name: ")
+	if err != nil {
+		return err
+	}
 
 	input, err := passInput(pm)
 	if err != nil {
-		showError(err.Error() + "\n")
-		waitForEnter()
 		return err
 	}
 
 	clearScreen()
-	catInput := ReadUserInput("Enter category: ")
+	catInput, err := ReadUserInput("Enter category: ")
+	if err != nil {
+		return err
+	}
 
 	if err = pm.SavePassword(nameInput, input, catInput); err != nil {
-		showError(err.Error() + "\n")
-		waitForEnter()
 		return err
 	}
 
@@ -85,12 +87,13 @@ func HandlePasswordAdd(pm *PasswordManager) error {
 
 func HandlePasswordSearch(pm *PasswordManager) error {
 	clearScreen()
-	nameInput := ReadUserInput("Enter service name: ")
+	nameInput, err := ReadUserInput("Enter service name: ")
+	if err != nil {
+		return err
+	}
 
 	pass, err := pm.GetPassword(nameInput)
 	if err != nil {
-		showError(err.Error() + "\n")
-		waitForEnter()
 		return err
 	}
 
@@ -98,8 +101,8 @@ func HandlePasswordSearch(pm *PasswordManager) error {
 	fmt.Println("Service:", pass.Name)
 	fmt.Println("Category:", pass.Category)
 	fmt.Println("Password:", pass.Value)
-	fmt.Println("Created:", pass.CreatedAt.Format("2006-01-02 15:04:04"))
-	fmt.Println("Last Modified:", pass.LastModified.Format("2006-01-02 15:04:04"))
+	fmt.Println("Created:", pass.CreatedAt.Format("2006-01-02 15:04:05"))
+	fmt.Println("Last Modified:", pass.LastModified.Format("2006-01-02 15:04:05"))
 
 	fmt.Println()
 
@@ -117,18 +120,17 @@ func HandlePasswordSearch(pm *PasswordManager) error {
 
 func HandlePasswordUpdate(pm *PasswordManager) error {
 	clearScreen()
-	nameInput := ReadUserInput("Enter service name: ")
+	nameInput, err := ReadUserInput("Enter service name: ")
+	if err != nil {
+		return err
+	}
 
 	newValue, err := passInput(pm)
 	if err != nil {
-		showError(err.Error() + "\n")
-		waitForEnter()
 		return err
 	}
 
 	if err = pm.UpdatePassword(nameInput, newValue); err != nil {
-		showError(err.Error() + "\n")
-		waitForEnter()
 		return err
 	}
 
@@ -150,12 +152,13 @@ func HandleExitAndSave(pm *PasswordManager) error {
 	clearScreen()
 	fmt.Println("Saving changes...")
 	if err := pm.SaveToFile(); err != nil {
-		showError(err.Error())
 		return err
 	}
 
 	showSuccess("Changes saved successfully!")
 	showSuccess("Goodbye!")
+
+	waitForEnter()
 
 	return nil
 }
@@ -189,11 +192,12 @@ func HandlePasswordsList(pm *PasswordManager) error {
 func HandlePasswordDelete(pm *PasswordManager) error {
 	clearScreen()
 
-	nameInput := ReadUserInput("Enter service name: ")
+	nameInput, err := ReadUserInput("Enter service name: ")
+	if err != nil {
+		return err
+	}
 
 	if err := pm.DeletePassword(nameInput); err != nil {
-		showError(err.Error() + "\n")
-		waitForEnter()
 		return err
 	}
 

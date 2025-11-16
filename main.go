@@ -60,9 +60,10 @@ func main() {
 
 	for {
 		ShowMainMenu()
-		choice := ReadUserInput("Enter your choice: ")
-
 		var err error
+
+		choice, err := ReadUserInput("Enter your choice: ")
+
 		switch choice {
 		case "1":
 			err = HandlePasswordGeneration(pm)
@@ -94,6 +95,11 @@ func main() {
 			return
 		default:
 			showError("Invalid choice. Please try again")
+			waitForEnter()
+		}
+
+		if err != nil {
+			showError(fmt.Sprintf("Operation failed: %v", err))
 			waitForEnter()
 		}
 	}

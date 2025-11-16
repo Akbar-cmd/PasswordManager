@@ -20,10 +20,11 @@ import (
 
 func (pm *PasswordManager) SaveToFile() error {
 	pm.mu.RLock()
+	defer pm.mu.RUnlock()
 
 	// 1
-	if pm.isInitialized != true {
-		return ErrPassManagerNotInit
+	if err := pm.passInit(); err != nil {
+		return err
 	}
 
 	// 2
@@ -31,8 +32,6 @@ func (pm *PasswordManager) SaveToFile() error {
 	if err != nil {
 		return err
 	}
-
-	pm.mu.RUnlock()
 
 	// 3
 	block, err := aes.NewCipher(pm.masterKey)
@@ -82,6 +81,14 @@ func (pm *PasswordManager) SaveToFile() error {
 
 func (pm *PasswordManager) LoadFromFile() error {
 
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
+
+	// 1
+	if err := pm.passInit(); err != nil {
+		return err
+	}
+
 	// 2
 	file, err := os.Open(pm.filePath)
 	if err != nil {
@@ -110,14 +117,6 @@ func (pm *PasswordManager) LoadFromFile() error {
 	stream := cipher.NewCFBDecrypter(block, iv)
 	decryptedData := make([]byte, len(encryptedData))
 	stream.XORKeyStream(decryptedData, encryptedData)
-
-	pm.mu.Lock()
-	defer pm.mu.Unlock()
-
-	// 1
-	if pm.isInitialized != true {
-		return ErrPassManagerNotInit
-	}
 
 	// 6
 	return json.Unmarshal(decryptedData, &pm.passwords)

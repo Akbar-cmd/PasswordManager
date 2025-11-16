@@ -16,7 +16,7 @@ import (
 // 3. Удалить пробельные символы в начале и конце
 // 4. Вернуть очищенную от боковых пробелов строку
 
-func ReadUserInput(prompt string) string {
+func ReadUserInput(prompt string) (string, error) {
 
 	// 1
 	fmt.Print(prompt)
@@ -25,18 +25,16 @@ func ReadUserInput(prompt string) string {
 	reader := bufio.NewReader(os.Stdin)
 	input, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Println("Ошибка чтения ввода:", err)
-		return ""
+		return "", fmt.Errorf("failed to read input: %w", err)
 	}
 
 	// 3
 	trimmed := strings.TrimSpace(input)
 	if trimmed == "" {
-		fmt.Println("Ввод не может быть пустым! Попробуйте снова.")
-		return ""
+		return "", fmt.Errorf("input cannot be empty")
 	}
 	// 4
-	return trimmed
+	return trimmed, nil
 
 }
 
@@ -158,11 +156,13 @@ func passInput(pm *PasswordManager) (string, error) {
 
 	if passIn == "" {
 		clearScreen()
-		input := ReadUserInput("Enter password length (min 8): ")
+		input, err := ReadUserInput("Enter password length (min 8): ")
+		if err != nil {
+			return "", err
+		}
 		length, err := strconv.Atoi(input)
 		if err != nil {
-			showError("Invalid number")
-			return "", err
+			return "", fmt.Errorf("invalid number: %w", err)
 		}
 
 		pass, err := pm.GeneratePassword(length)
@@ -179,7 +179,7 @@ func passInput(pm *PasswordManager) (string, error) {
 		if err != nil {
 			return "", ErrPassWeak
 		}
-		showInfo(fmt.Sprintf("Generated password: %s", passIn))
+		showInfo(fmt.Sprintf("Password accepted: %s", passIn))
 	}
 
 	return passIn, nil
